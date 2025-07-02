@@ -4,22 +4,23 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 
 # path to complete scanned file -- change here for testing different filetypes
-file = './ocr_work/combined-txt-full-tif-cropped.txt' 
+def pull_lines(file):
 
-with open(file) as file:
-    lines = file.readlines()
+    with open(file) as file:
+        lines = file.readlines()
 
-text = []
-for line in lines:
-    line = line.lower()
-    line = line.replace("\n", " ")
-    line = line.replace("  ", " ")
-    line = line.replace("  ", " ")
-    line = line.replace('"', " ")
-    line = line.replace('or.', 'dr.')
-    line = re.sub('[c,t,s,o,e,n,m,e,a,r,u,i,b,w,p,r,v,d]{18,}', "", line)
-    if(bool(re.search("[A-Za-z0-9]", line))==True):
-        text.append(line)
+    text = []
+    for line in lines:
+        line = line.lower()
+        line = line.replace("\n", " ")
+        line = line.replace("  ", " ")
+        line = line.replace("  ", " ")
+        line = line.replace('"', " ")
+        line = line.replace('or.', 'dr.')
+        line = re.sub(r'[.][.]*', '.', line)
+        if(bool(re.search("[A-Za-z0-9]", line))==True):
+            text.append(line)
+    return text
 
 
 class DT():
@@ -105,7 +106,7 @@ def get_school(data):
                         if term in curr:
                             return curr
 
-# check overlapping elts in a list
+# check overlapping elts in a list ## helper method
 def check_present(str, ls):
     for l in ls:
         if l in str:
@@ -119,7 +120,11 @@ def check_present(str, ls):
 ###
 ###
 
+## CHANGE for work on different years
+year = '1971'
+filename = './archives/'+year+'.txt'
 
+text = pull_lines(filename)
 chunks = grab(text)
 dts = []
 p_count = 0
@@ -144,11 +149,12 @@ for dt in dts:
     ps.append(dt.president)
     ss.append(dt.name)
 
-#counts for sanity check ---
+#counts for sanity check --- testing purposes
+
 print(len(chunks))
 print(s_count)
 print(p_count)
 
 #save to cvs file
 df = pd.DataFrame({'president names': ps,'schools': ss})
-df.to_csv('results.csv', index=False)
+df.to_csv('./results/results'+year+'.csv', index=False)
