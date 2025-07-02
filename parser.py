@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 # path to complete scanned file -- change here for testing different filetypes
 def pull_lines(file):
 
-    with open(file) as file:
+    with open(file, encoding='utf-8') as file:
         lines = file.readlines()
 
     text = []
@@ -32,20 +32,21 @@ class DT():
         print(self.name + " --- " + self.president)
 
 
-def grab(ws):
-    terms = ['accred', 'accrad']
+def grab(ws, lazy=False):
+    if lazy:
+        terms = ['pres.']
+    else:
+        terms = ['accred', 'accrad']
     ixs = []
-
     for term in terms:
         ixs+=get_ix(ws, term)
-    
+
     pgs = []
     for ix in ixs:
         length = 6
         for i in range(length):
             if ix+length in ixs:
                 ixs.remove(ix+length)
-
     for i in range(len(ixs)):
         if(len(ixs)>i+1):
             pgs.append(ws[ixs[i]:ixs[i+1]])
@@ -64,7 +65,7 @@ def get_pres(data):
     ignore = ['page break', 'community', 'librariin', 'cellag', 'coluga', 'offica', 'chancelior', 'aisistant', 'theological', 'collage', 'computing', 'highest offering', "master's", ' materials ', 'fongr. dist', 'congr dist', 'congr. dist', ' assoc dir ', '*u ', 'ubrarian', 'accraditation', 'fiscal', 'association', 'bachelor', 'institute',  'village of','division of', 'inst of', ' resource ', 'u off ', 'religion', 'hussar', 'enrollment', 'u of ', 'vice', 'accredkation', 'accredkatio', 'counselling', 'telephone', 'agrarian', 'register', 'chairman', 'fice rode', 'univonity', 'university', 'list.', 'dist.', 'supervisor of', 'comptroller', 'school of', 'acad plan',  'alumnae', 'activity', 'activities', 'coordinator', 'education', 'library', 'accreditition', 'provost', 'program', 'secretary', 'financial', 'control', 'librerian', 'ragistrar', 'computer', 'planning', 'institutional', 'research', 'controller', 'vocational', 'technical', 'placement', 'counselor', 'chancellor', 'quarter', 'coordinate', 'college', 'treasurer', 'bursar', 'acadtmic', 'trimester', 'diractor', 'public', 'relations', 'assistant', 'vice', 'registrar', 'semester', 'accreditation', 'academic', 'business', 'manager', 'reigstrar', 'director', 'admission', 'librarian', 'congr.', 'dist.', 'office']
     # CASE 1 ::: president name straightup
     for line in data:
-        if ('pres' in line or 'resident' in line) and 'vice' not in line:
+        if ('pres' in line or 'resident' in line or 'pres.—' in line) and 'vice' not in line:
             check = line.replace('president', '')
             check = re.sub('[.]*', '', check)
             if(bool(re.search("[A-Za-z]", check))==True):
@@ -90,7 +91,13 @@ def get_pres(data):
                     if check_present(check, ignore) == False:
                         return check
 
-def get_school(data):
+def get_school(data, lazy=False):
+    if lazy:
+        for i in range(len(data)):
+            if ('pres' in data[i]):
+                if (len(data)>=i-1):
+                    return data[i-1]
+                
     terms = [' offering', 'coll', 'preparatory', 'seminary', 'saminory', 'collwgw', 'cellwgw', 'cellogo', ' of ', 'institut', 'office', ' u ', 'state', 'uni', 'univ', 'univmitity', 'univofsity', 'univeriify', 'univerify', 'univonity', 'univanity', 'coluga', 'inst', ' jc', 'campus', 'colloga', 'university', 'college', 'u of', 'collage', 'suny', 'supv', 'tchrs', 'teach', 'technl', 'tedc', 'test', 'text', 'theo', 'theol', 'thos', 'trade', 'union', 'undergrad', 'undergraduate', 'univ', 'uni', '*']
     ignore = ['or. ', 'dr. ', 'financial', 'officer', 'accreditation', ', ', 'teleph', 'student affairs', 'registrar', 'director', 'donation', ' list ', 'dist.', 'list.', 'mean', 'mean of', 'director of', 'dir of', 'program—', 'assistant', 'assnt ', 'dr. ' 'adminv', ' dist ', 'street', 'congr.', 'dean of', 'avenue', 'highway', 'conr.', 'mean of']
     length = 5
@@ -121,11 +128,11 @@ def check_present(str, ls):
 ###
 
 ## CHANGE for work on different years
-year = '1971'
+year = '1960'
 filename = './archives/'+year+'.txt'
 
 text = pull_lines(filename)
-chunks = grab(text)
+chunks = grab(text, lazy=True)
 dts = []
 p_count = 0
 s_count = 0
@@ -134,7 +141,7 @@ for i in range(len(chunks)):
         txt = chunks[i]
         next_txt = chunks[i+1]
         p = get_pres(next_txt)
-        s = get_school(txt)
+        s = get_school(txt, lazy=True)
         if s!=None:
             s_count+=1
         if p!=None:
