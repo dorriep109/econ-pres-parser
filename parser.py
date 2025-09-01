@@ -113,6 +113,16 @@ def get_school(data, lazy=False):
                         if term in curr:
                             return curr
 
+def modified_1948(data):
+    linked = {}
+    for i in range(len(data)):
+        line = data[i].lower()
+        if 'pres.—' in line:
+            college = data[i-2]
+            linked.update({college:line})
+    return linked
+
+
 # check overlapping elts in a list ## helper method
 def check_present(str, ls):
     for l in ls:
@@ -127,41 +137,49 @@ def check_present(str, ls):
 ###
 ###
 
-## CHANGE for work on different years
-year = '1960'
-filename = './archives/'+year+'.txt'
+if __name__=='__main__':
+    ## CHANGE for work on different  years
+    year = '1948'
+    filename = './archives/'+year+'.txt'
+    text = pull_lines(filename)
+    if year=='1948':
+        chunks = modified_1948(text)
+        ps = []
+        ss = []
+        for college in chunks:
+            ps.append(chunks.get(college))
+            ss.append(college)
+            p_count = len(ps)
+            s_count = len(ss)
+    else:
+        chunks = grab(text, lazy=True)
+        dts = []
+        p_count = 0
+        s_count = 0
+        for i in range(len(chunks)):
+            if len(chunks)>i+1:
+                txt = chunks[i]
+                next_txt = chunks[i+1]
+                p = get_pres(next_txt)
+                s = get_school(txt, lazy=True)
+                if s!=None:
+                    s_count+=1
+                if p!=None:
+                    p_count+=1
+                dt = DT(s, p)
+                dts.append(dt)
+        ps = []
+        ss = []
+        for dt in dts:
+            ps.append(dt.president)
+            ss.append(dt.name)
 
-text = pull_lines(filename)
-chunks = grab(text, lazy=True)
-dts = []
-p_count = 0
-s_count = 0
-for i in range(len(chunks)):
-    if len(chunks)>i+1:
-        txt = chunks[i]
-        next_txt = chunks[i+1]
-        p = get_pres(next_txt)
-        s = get_school(txt, lazy=True)
-        if s!=None:
-            s_count+=1
-        if p!=None:
-            p_count+=1
-        dt = DT(s, p)
-        dts.append(dt)
+    #counts for sanity check --- testing purposes
 
+    print(len(chunks))
+    print(s_count)
+    print(p_count)
 
-ps = []
-ss = []
-for dt in dts:
-    ps.append(dt.president)
-    ss.append(dt.name)
-
-#counts for sanity check --- testing purposes
-
-print(len(chunks))
-print(s_count)
-print(p_count)
-
-#save to cvs file
-df = pd.DataFrame({'president names': ps,'schools': ss})
-df.to_csv('./results/results'+year+'.csv', index=False)
+    #save to cvs file
+    df = pd.DataFrame({'president names': ps,'schools': ss})
+    df.to_csv('./results/results'+year+'.csv', index=False)
